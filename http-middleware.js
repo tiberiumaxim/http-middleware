@@ -3,7 +3,9 @@ var async = require('async');
 
 var mddl = {
 	server: null,
-	middleware: [],
+	middleware: {
+		'global': []
+	},
 	routes: {},
 
 	createServer: function () {
@@ -17,14 +19,30 @@ var mddl = {
 	},
 
 	use: function (a, b) {
-		if (typeof(a) === 'function' && a.length === 3) {
-			mddl.middleware.push(a);
-		}
-		else if (typeof(a) === 'function' && a.length === 2) {
-			mddl.routes['/'] = a;
+		if (typeof(a) === 'function') {
+			if (a.length === 2) {
+				mddl.routes['/'] = a;
+			}
+			else if (a.length === 3) {
+				mddl.middleware['global'].push(a);
+			}
+			else {
+				console.error('Error @ a-function');
+			}
 		}
 		else if (typeof(a) === 'string' && typeof(b) === 'function') {
-			mddl.routes[a] = b;
+			if (b.length === 2) {
+				mddl.routes[a] = b;
+			}
+			else if (b.length === 3) {
+				if (!mddl.middleware[a]) {
+					mddl.middleware[a] = [];
+				}
+				mddl.middleware[a].push(b);
+			}
+			else {
+				console.error('Error @ b-function');
+			}
 		}
 		else {
 			console.error('Error @ mddl.use');
@@ -33,9 +51,16 @@ var mddl = {
 
 	request: function (req, res) {
 		var route = req.url;
+		var allMiddleware = mddl.middleware.global;		
 		
 		if (mddl.routes[route]) {
-			async.eachSeries(mddl.middleware, function (mid, nextMid) {
+			if (route !== 'global' && mddl.middleware.hasOwnProperty(route)) {
+				allMiddleware = allMiddleware.concat(mddl.middleware[route]);
+			}
+
+			// console.log(route, mddl.middleware, allMiddleware);
+
+			async.eachSeries(allMiddleware, function (mid, nextMid) {
 				mid(req, res, nextMid);
 			}, function () {
 				mddl.routes[route](req, res);		
