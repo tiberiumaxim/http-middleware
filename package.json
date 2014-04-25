@@ -1,0 +1,11 @@
+{
+  "name": "http-middleware",
+  "version": "1.0.0",
+  "dependencies": {
+    "async": "~0.7.0",
+    "http": "0.0.0"
+  },
+  "engines": {
+    "node": ">=0.8"
+  }
+}
